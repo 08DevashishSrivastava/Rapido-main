@@ -95,24 +95,24 @@ export default function AdminDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <Badge variant="purple" size="sm">ADMINISTRATOR PORTAL</Badge>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white mt-1">
-            RidePass Pro <span className="text-purple-400">Back-Office</span>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">
+            RidePass Pro <span className="text-purple-600">Back-Office</span>
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400">
+          <p className="text-xs sm:text-sm text-slate-500">
             System health, driver document verification, ride auditing, and plan configuration.
           </p>
         </div>
       </div>
 
       {statusMessage && (
-        <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-xs flex items-center gap-2">
-          <CheckCircle className="w-4 h-4 shrink-0" />
+        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs flex items-center gap-2 font-medium">
+          <CheckCircle className="w-4 h-4 shrink-0 text-emerald-600" />
           <span>{statusMessage}</span>
         </div>
       )}
 
       {/* Tabs */}
-      <div className="flex flex-wrap gap-2 p-1.5 bg-slate-900 border border-slate-800 rounded-2xl">
+      <div className="flex flex-wrap gap-2 p-1.5 bg-white border border-slate-200 rounded-2xl shadow-sm">
         {[
           { id: 'overview', name: 'Overview' },
           { id: 'drivers', name: `Drivers (${drivers.length})` },
@@ -126,7 +126,7 @@ export default function AdminDashboard() {
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === tab.id
                 ? 'bg-purple-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
           >
             {tab.name}
@@ -138,42 +138,42 @@ export default function AdminDashboard() {
       {activeTab === 'overview' && (
         <div className="space-y-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card>
+            <Card accent="green">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-slate-400 uppercase">Total Revenue</span>
-                <TrendingUp className="w-5 h-5 text-emerald-400" />
+                <span className="text-xs font-semibold text-slate-500 uppercase">Total Revenue</span>
+                <TrendingUp className="w-5 h-5 text-emerald-600" />
               </div>
-              <span className="text-3xl font-black text-white">₹{metrics?.totalRevenue || 0}</span>
-              <span className="text-xs text-emerald-400 block mt-1">Processed transactions</span>
+              <span className="text-3xl font-black text-slate-900">₹{metrics?.totalRevenue || 0}</span>
+              <span className="text-xs text-emerald-600 block mt-1">Processed transactions</span>
             </Card>
 
-            <Card>
+            <Card accent="blue">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-slate-400 uppercase">Active Subscribers</span>
-                <CreditCard className="w-5 h-5 text-blue-400" />
+                <span className="text-xs font-semibold text-slate-500 uppercase">Active Subscribers</span>
+                <CreditCard className="w-5 h-5 text-blue-600" />
               </div>
-              <span className="text-3xl font-black text-white">{metrics?.activeSubscriptions || 0}</span>
-              <span className="text-xs text-blue-400 block mt-1">Active passes holding balance</span>
+              <span className="text-3xl font-black text-slate-900">{metrics?.activeSubscriptions || 0}</span>
+              <span className="text-xs text-blue-600 block mt-1">Active passes holding balance</span>
             </Card>
 
-            <Card>
+            <Card accent="lavender">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-slate-400 uppercase">Total Drivers</span>
-                <Car className="w-5 h-5 text-indigo-400" />
+                <span className="text-xs font-semibold text-slate-500 uppercase">Total Drivers</span>
+                <Car className="w-5 h-5 text-indigo-600" />
               </div>
-              <span className="text-3xl font-black text-white">{metrics?.totalCaptains || 0}</span>
-              <span className="text-xs text-slate-400 block mt-1">
+              <span className="text-3xl font-black text-slate-900">{metrics?.totalCaptains || 0}</span>
+              <span className="text-xs text-slate-500 block mt-1">
                 {metrics?.activeCaptains || 0} currently online
               </span>
             </Card>
 
-            <Card>
+            <Card accent="orange">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-slate-400 uppercase">Open Support Cases</span>
-                <LifeBuoy className="w-5 h-5 text-amber-400" />
+                <span className="text-xs font-semibold text-slate-500 uppercase">Open Support Cases</span>
+                <LifeBuoy className="w-5 h-5 text-amber-600" />
               </div>
-              <span className="text-3xl font-black text-white">{metrics?.openComplaints || 0}</span>
-              <span className="text-xs text-amber-400 block mt-1">Pending resolution</span>
+              <span className="text-3xl font-black text-slate-900">{metrics?.openComplaints || 0}</span>
+              <span className="text-xs text-amber-600 block mt-1">Pending resolution</span>
             </Card>
           </div>
         </div>
@@ -182,10 +182,10 @@ export default function AdminDashboard() {
       {/* Drivers Management Tab */}
       {activeTab === 'drivers' && (
         <Card>
-          <h3 className="text-lg font-bold text-white mb-4">Driver Registry & Document Verification</h3>
+          <h3 className="text-lg font-bold text-slate-900 mb-4">Driver Registry & Document Verification</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="uppercase bg-slate-950/60 text-slate-400 border-b border-slate-800">
+              <thead className="uppercase bg-slate-50 text-slate-500 border-b border-slate-200">
                 <tr>
                   <th className="py-3 px-4">Driver Name</th>
                   <th className="py-3 px-4">Email</th>
@@ -195,14 +195,14 @@ export default function AdminDashboard() {
                   <th className="py-3 px-4">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-slate-100">
                 {drivers.map((d) => (
-                  <tr key={d._id} className="hover:bg-slate-800/30">
-                    <td className="py-3 px-4 font-bold text-white">
+                  <tr key={d._id} className="hover:bg-slate-50/80">
+                    <td className="py-3 px-4 font-bold text-slate-900">
                       {d.fullname?.firstname} {d.fullname?.lastname}
                     </td>
-                    <td className="py-3 px-4 text-slate-300">{d.email}</td>
-                    <td className="py-3 px-4 capitalize text-slate-400">
+                    <td className="py-3 px-4 text-slate-600">{d.email}</td>
+                    <td className="py-3 px-4 capitalize text-slate-500">
                       {d.vehicle?.vehicleType} • {d.vehicle?.plate} ({d.vehicle?.color})
                     </td>
                     <td className="py-3 px-4">
@@ -236,10 +236,10 @@ export default function AdminDashboard() {
       {/* Users Tab */}
       {activeTab === 'users' && (
         <Card>
-          <h3 className="text-lg font-bold text-white mb-4">Registered Passengers</h3>
+          <h3 className="text-lg font-bold text-slate-900 mb-4">Registered Passengers</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="uppercase bg-slate-950/60 text-slate-400 border-b border-slate-800">
+              <thead className="uppercase bg-slate-50 text-slate-500 border-b border-slate-200">
                 <tr>
                   <th className="py-3 px-4">Passenger Name</th>
                   <th className="py-3 px-4">Email</th>
@@ -247,19 +247,19 @@ export default function AdminDashboard() {
                   <th className="py-3 px-4">Registered Date</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-slate-100">
                 {users.map((u) => (
                   <tr key={u._id}>
-                    <td className="py-3 px-4 font-bold text-white">
+                    <td className="py-3 px-4 font-bold text-slate-900">
                       {u.fullname?.firstname} {u.fullname?.lastname}
                     </td>
-                    <td className="py-3 px-4 text-slate-300">{u.email}</td>
+                    <td className="py-3 px-4 text-slate-600">{u.email}</td>
                     <td className="py-3 px-4">
                       <Badge variant={u.role === 'admin' ? 'purple' : 'blue'} size="sm">
                         {u.role || 'user'}
                       </Badge>
                     </td>
-                    <td className="py-3 px-4 text-slate-400">
+                    <td className="py-3 px-4 text-slate-500">
                       {new Date(u.createdAt).toLocaleDateString()}
                     </td>
                   </tr>
@@ -273,10 +273,10 @@ export default function AdminDashboard() {
       {/* Rides Tab */}
       {activeTab === 'rides' && (
         <Card>
-          <h3 className="text-lg font-bold text-white mb-4">All Platform Rides</h3>
+          <h3 className="text-lg font-bold text-slate-900 mb-4">All Platform Rides</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="uppercase bg-slate-950/60 text-slate-400 border-b border-slate-800">
+              <thead className="uppercase bg-slate-50 text-slate-500 border-b border-slate-200">
                 <tr>
                   <th className="py-3 px-4">Route</th>
                   <th className="py-3 px-4">Vehicle</th>
@@ -287,23 +287,23 @@ export default function AdminDashboard() {
                   <th className="py-3 px-4">Date</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-slate-100">
                 {rides.map((r) => (
                   <tr key={r._id}>
                     <td className="py-3 px-4 max-w-xs truncate">
-                      <div className="font-bold text-white truncate">{r.pickup}</div>
-                      <div className="text-slate-400 truncate">→ {r.destination}</div>
+                      <div className="font-bold text-slate-900 truncate">{r.pickup}</div>
+                      <div className="text-slate-500 truncate">→ {r.destination}</div>
                     </td>
-                    <td className="py-3 px-4 capitalize">{r.vehicleType}</td>
-                    <td className="py-3 px-4">₹{r.fare}</td>
-                    <td className="py-3 px-4 font-bold text-white">₹{r.finalFare}</td>
-                    <td className="py-3 px-4 text-emerald-400">₹{r.ridePassDiscount || 0}</td>
+                    <td className="py-3 px-4 capitalize text-slate-600">{r.vehicleType}</td>
+                    <td className="py-3 px-4 text-slate-600">₹{r.fare}</td>
+                    <td className="py-3 px-4 font-bold text-slate-900">₹{r.finalFare}</td>
+                    <td className="py-3 px-4 text-emerald-600 font-semibold">₹{r.ridePassDiscount || 0}</td>
                     <td className="py-3 px-4">
                       <Badge variant={r.status === 'completed' ? 'green' : 'default'} size="sm">
                         {r.status}
                       </Badge>
                     </td>
-                    <td className="py-3 px-4 text-slate-400">
+                    <td className="py-3 px-4 text-slate-500">
                       {new Date(r.createdAt).toLocaleDateString()}
                     </td>
                   </tr>
@@ -317,20 +317,20 @@ export default function AdminDashboard() {
       {/* Complaints Tab */}
       {activeTab === 'complaints' && (
         <Card>
-          <h3 className="text-lg font-bold text-white mb-4">Support Inquiries & Complaints</h3>
+          <h3 className="text-lg font-bold text-slate-900 mb-4">Support Inquiries & Complaints</h3>
           <div className="space-y-4">
             {complaints.length === 0 ? (
-              <div className="text-center py-6 text-xs text-slate-400">No open complaints.</div>
+              <div className="text-center py-6 text-xs text-slate-500">No open complaints.</div>
             ) : (
               complaints.map((c) => (
-                <div key={c._id} className="p-4 bg-slate-950/60 border border-slate-800 rounded-xl space-y-2 text-xs">
+                <div key={c._id} className="p-4 bg-slate-50/80 border border-slate-200 rounded-xl space-y-2 text-xs">
                   <div className="flex justify-between items-baseline">
-                    <span className="font-bold text-white text-sm">{c.subject}</span>
+                    <span className="font-bold text-slate-900 text-sm">{c.subject}</span>
                     <Badge variant={c.status === 'resolved' ? 'green' : 'yellow'} size="sm">
                       {c.status}
                     </Badge>
                   </div>
-                  <p className="text-slate-300">{c.description}</p>
+                  <p className="text-slate-700">{c.description}</p>
                   <div className="flex justify-between items-center pt-2 text-slate-500">
                     <span>Category: {c.category} • Submitted by: {c.user?.email || 'User'}</span>
                     {c.status !== 'resolved' && (

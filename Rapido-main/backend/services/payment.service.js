@@ -1,11 +1,54 @@
 const crypto = require('crypto');
+const Razorpay = require('razorpay');
 const Payment = require('../models/payment.model');
 const subscriptionService = require('./subscription.service');
 const Ride = require('../models/ride.model');
 
-// Create payment order
+// Helper to safely get Razorpay SDK instance when keys are configured
+const getRazorpayClient = () => {
+    const key_id = process.env.RAZORPAY_KEY_ID;
+    const key_secret = process.env.RAZORPAY_KEY_SECRET;
+    if (key_id && key_secret && !key_id.includes('your_test_key') && !key_id.includes('placeholder')) {
+        try {
+            return new Razorpay({ key_id, key_secret });
+        } catch (e) {
+            console.warn('Razorpay SDK init error:', e.message);
+            return null;
+        }
+    }
+    return null;
+};
+
+// Create payment order (supports Razorpay standard checkout)
 const createPaymentOrder = async ({ userId, purpose, amount, subscriptionId = null, rideId = null }) => {
-    const orderId = `RP_ORD_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+    const amountInPaise = Math.round(amount * 100);
+    const rzp = getRazorpayClient();
+    let orderId;
+    let provider = 'razorpay_test';
+
+    if (rzp) {
+        try {
+            const rzpOrder = await rzp.orders.create({
+                amount: amountInPaise,
+                currency: 'INR',
+                receipt: `rcpt_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+                notes: {
+                    userId: userId.toString(),
+                    purpose,
+                    subscriptionId: subscriptionId ? subscriptionId.toString() : ''
+                }
+            });
+            orderId = rzpOrder.id;
+            provider = 'razorpay';
+        } catch (err) {
+            console.warn('Razorpay live order creation fallback to simulated test mode:', err.message);
+            orderId = `order_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+            provider = 'razorpay_test_mode';
+        }
+    } else {
+        orderId = `order_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+        provider = 'razorpay_test_mode';
+    }
 
     const payment = await Payment.create({
         user: userId,
@@ -15,37 +58,50 @@ const createPaymentOrder = async ({ userId, purpose, amount, subscriptionId = nu
         amount,
         currency: 'INR',
         orderId,
-        provider: process.env.PAYMENT_PROVIDER || 'demo_gateway',
+        provider,
         status: 'pending',
-        idempotencyKey: `order-${orderId}`
+        idempotencyKey: `order-${orderId}`,
+        metadata: {
+            amountInPaise,
+            keyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder'
+        }
     });
 
-    return payment;
+    return {
+        payment,
+        orderId,
+        amount,
+        amountInPaise,
+        currency: 'INR',
+        keyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder',
+        isTestMode: !rzp,
+        provider
+    };
 };
 
-// Verify and capture payment
-const verifyAndProcessPayment = async ({ orderId, paymentId = `PAY_${Date.now()}`, signature = null }) => {
+// Verify and capture payment via Razorpay HMAC signature
+const verifyAndProcessPayment = async ({ orderId, paymentId = `pay_${Date.now()}`, signature = null }) => {
     const payment = await Payment.findOne({ orderId });
     if (!payment) {
         throw new Error('Payment order not found');
     }
 
     if (payment.status === 'succeeded') {
-        return { success: true, payment, message: 'Payment already processed' };
+        return { success: true, payment, message: 'Payment already processed and verified' };
     }
 
-    // Verify signature if Razorpay or HMAC secret is configured
-    const webhookSecret = process.env.PAYMENT_WEBHOOK_SECRET;
-    if (webhookSecret && signature) {
+    // Verify official Razorpay signature if secret is configured
+    const secret = process.env.RAZORPAY_KEY_SECRET || process.env.PAYMENT_WEBHOOK_SECRET;
+    if (secret && signature && !secret.includes('your_test_key')) {
         const expectedSignature = crypto
-            .createHmac('sha256', webhookSecret)
+            .createHmac('sha256', secret)
             .update(`${orderId}|${paymentId}`)
             .digest('hex');
 
         if (expectedSignature !== signature) {
             payment.status = 'failed';
             await payment.save();
-            throw new Error('Invalid payment signature verification failed');
+            throw new Error('Invalid Razorpay payment signature verification failed');
         }
     }
 

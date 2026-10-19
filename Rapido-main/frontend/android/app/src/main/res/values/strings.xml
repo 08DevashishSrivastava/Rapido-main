@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">RidePass Pro</string>
+    <string name="title_activity_main">RidePass Pro</string>
+    <string name="package_name">com.ridepasspro.app</string>
+    <string name="custom_url_scheme">com.ridepasspro.app</string>
+</resources>

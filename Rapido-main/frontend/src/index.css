@@ -2,23 +2,57 @@
 
 @layer base {
   body {
-    background-color: #090D16;
-    color: #F1F5F9;
+    background-color: #F8FAFC;
+    color: #1E293B;
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
 }
 
-/* Custom glow and backdrop effects */
-.glass-panel {
-  background: rgba(17, 24, 39, 0.75);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+/* Light theme card and surface utilities */
+.card-light {
+  background-color: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
 }
 
-.glow-blue {
-  box-shadow: 0 0 25px -5px rgba(58, 134, 255, 0.3);
+.card-light-hover {
+  transition: all 0.2s ease-in-out;
+}
+.card-light-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+}
+
+/* Accent glow effects */
+.glow-royal {
+  box-shadow: 0 4px 20px -2px rgba(37, 99, 235, 0.22);
+}
+
+.glow-teal {
+  box-shadow: 0 4px 20px -2px rgba(13, 148, 136, 0.22);
 }
 
 .glow-emerald {
-  box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 4px 20px -2px rgba(22, 163, 74, 0.22);
+}
+
+.glow-orange {
+  box-shadow: 0 4px 20px -2px rgba(234, 88, 12, 0.22);
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F1F5F9;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
 }

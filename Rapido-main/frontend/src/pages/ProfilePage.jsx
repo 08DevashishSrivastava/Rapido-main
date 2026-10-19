@@ -74,10 +74,10 @@ export default function ProfilePage() {
       {/* Title */}
       <div className="space-y-1">
         <Badge variant="blue" size="sm">ACCOUNT & SUPPORT</Badge>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
-          Profile & <span className="text-blue-500">Settings</span>
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+          Profile & <span className="text-blue-600">Settings</span>
         </h1>
-        <p className="text-xs sm:text-sm text-slate-400">
+        <p className="text-xs sm:text-sm text-slate-500">
           Manage your passenger profile details, view role permissions, or submit a support ticket.
         </p>
       </div>
@@ -87,9 +87,9 @@ export default function ProfilePage() {
         <div className="lg:col-span-6 space-y-6">
           <Card>
             <form onSubmit={handleUpdateProfile} className="space-y-4">
-              <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <User className="w-5 h-5 text-blue-500" />
+              <div className="flex items-center justify-between pb-4 border-b border-slate-200">
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <User className="w-5 h-5 text-blue-600" />
                   <span>Personal Profile</span>
                 </h3>
                 <Badge variant={role === 'admin' ? 'purple' : role === 'captain' ? 'green' : 'blue'}>
@@ -98,48 +98,48 @@ export default function ProfilePage() {
               </div>
 
               {profileMessage && (
-                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-xs flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 shrink-0" />
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs flex items-center gap-2 font-medium">
+                  <CheckCircle className="w-4 h-4 shrink-0 text-emerald-600" />
                   <span>{profileMessage}</span>
                 </div>
               )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-300">First Name</label>
+                  <label className="text-xs font-semibold text-slate-700">First Name</label>
                   <input
                     type="text"
                     required
                     value={firstname}
                     onChange={(e) => setFirstname(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-blue-500 transition-colors"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-300">Last Name</label>
+                  <label className="text-xs font-semibold text-slate-700">Last Name</label>
                   <input
                     type="text"
                     value={lastname}
                     onChange={(e) => setLastname(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-blue-500 transition-colors"
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300">Registered Email</label>
+                <label className="text-xs font-semibold text-slate-700">Registered Email</label>
                 <input
                   type="email"
                   disabled
                   value={user?.email || captain?.email || 'user@example.com'}
-                  className="w-full px-3 py-2 bg-slate-950/60 border border-slate-800 rounded-xl text-xs text-slate-400 cursor-not-allowed"
+                  className="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs text-slate-500 cursor-not-allowed"
                 />
               </div>
 
               {role === 'captain' && captain?.vehicle && (
-                <div className="p-3 bg-slate-950/70 border border-slate-800 rounded-xl text-xs space-y-1">
-                  <span className="font-bold text-blue-400 block">Registered Vehicle</span>
-                  <div className="text-slate-300">
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1">
+                  <span className="font-bold text-blue-600 block">Registered Vehicle</span>
+                  <div className="text-slate-700">
                     {captain.vehicle.color} • {captain.vehicle.plate} ({captain.vehicle.vehicleType})
                   </div>
                 </div>
@@ -156,38 +156,38 @@ export default function ProfilePage() {
         <div className="lg:col-span-6 space-y-6">
           <Card>
             <form onSubmit={handleCreateComplaint} className="space-y-4">
-              <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <LifeBuoy className="w-5 h-5 text-emerald-400" />
+              <div className="flex items-center justify-between pb-4 border-b border-slate-200">
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <LifeBuoy className="w-5 h-5 text-emerald-600" />
                   <span>Report Issue or Feedback</span>
                 </h3>
               </div>
 
               {complaintMessage && (
-                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-xs flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 shrink-0" />
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs flex items-center gap-2 font-medium">
+                  <CheckCircle className="w-4 h-4 shrink-0 text-emerald-600" />
                   <span>{complaintMessage}</span>
                 </div>
               )}
 
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300">Subject</label>
+                <label className="text-xs font-semibold text-slate-700">Subject</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Issue with fare calculation or driver delay"
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300">Category</label>
+                <label className="text-xs font-semibold text-slate-700">Category</label>
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-blue-500"
                 >
                   <option value="ride_issue">Ride Issue</option>
                   <option value="billing">Billing & Pass Deduction</option>
@@ -198,14 +198,14 @@ export default function ProfilePage() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300">Description</label>
+                <label className="text-xs font-semibold text-slate-700">Description</label>
                 <textarea
                   rows={3}
                   required
                   placeholder="Provide detailed information regarding your inquiry..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-blue-500"
                 />
               </div>
 

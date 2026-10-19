@@ -136,7 +136,7 @@ const checkoutSubscription = async (userId, planId, autoRenew = false) => {
         throw new Error('You already have an active RidePass. Wait until it expires or use remaining allowance before buying a new one.');
     }
 
-    const orderId = `RP_ORD_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+    const orderId = `order_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
 
     const userSub = await UserSubscription.create({
         user: userId,
@@ -158,6 +158,9 @@ const checkoutSubscription = async (userId, planId, autoRenew = false) => {
         autoRenew
     });
 
+    const keyId = process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder';
+    const isTestMode = !process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID.includes('placeholder') || process.env.RAZORPAY_KEY_ID.includes('your_');
+
     // Create corresponding payment record
     const payment = await Payment.create({
         user: userId,
@@ -166,9 +169,13 @@ const checkoutSubscription = async (userId, planId, autoRenew = false) => {
         amount: plan.price,
         currency: plan.currency || 'INR',
         orderId,
-        provider: 'demo_gateway',
+        provider: isTestMode ? 'razorpay_test_mode' : 'razorpay',
         status: 'pending',
-        idempotencyKey: `sub-init-${userSub._id}`
+        idempotencyKey: `sub-init-${userSub._id}`,
+        metadata: {
+            amountInPaise: Math.round(plan.price * 100),
+            keyId
+        }
     });
 
     return {
@@ -176,6 +183,10 @@ const checkoutSubscription = async (userId, planId, autoRenew = false) => {
         payment,
         orderId,
         amount: plan.price,
+        amountInPaise: Math.round(plan.price * 100),
+        currency: plan.currency || 'INR',
+        keyId,
+        isTestMode,
         planName: plan.name
     };
 };
