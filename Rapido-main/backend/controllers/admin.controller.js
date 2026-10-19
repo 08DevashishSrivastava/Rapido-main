@@ -115,7 +115,7 @@ module.exports.createPlan = async (req, res) => {
 module.exports.updatePlan = async (req, res) => {
     try {
         const { planId } = req.params;
-        const plan = await SubscriptionPlan.findByIdAndUpdate(planId, req.body, { new: true });
+        const plan = await SubscriptionPlan.findByIdAndUpdate(planId, req.body, { returnDocument: 'after' });
         if (!plan) {
             return res.status(404).json({ message: 'Plan not found' });
         }

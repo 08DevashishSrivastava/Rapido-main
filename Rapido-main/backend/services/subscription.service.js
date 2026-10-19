@@ -302,7 +302,7 @@ const reserveRideAllowance = async (userSubId, rideId, userId) => {
         {
             $inc: { remainingRides: -1, usedRides: 1 }
         },
-        { new: true }
+        { returnDocument: 'after' }
     );
 
     if (!updatedSub) {
@@ -349,7 +349,7 @@ const reverseRideAllowance = async (userSubId, rideId, userId, reason = 'Ride ca
             $inc: { remainingRides: 1, usedRides: -1 },
             $set: { status: 'active' } // Reactivate if it was marked expired due to 0 balance
         },
-        { new: true }
+        { returnDocument: 'after' }
     );
 
     if (updatedSub) {

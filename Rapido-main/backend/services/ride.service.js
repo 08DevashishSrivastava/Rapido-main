@@ -141,7 +141,7 @@ const acceptRide = async ({ rideId, captainId }) => {
             captain: captainId,
             acceptedAt: new Date()
         },
-        { new: true }
+        { returnDocument: 'after' }
     ).populate('user', 'fullname email phone');
 
     if (!ride) {
