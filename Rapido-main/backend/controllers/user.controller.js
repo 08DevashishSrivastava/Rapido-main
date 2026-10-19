@@ -64,12 +64,29 @@ res.status(200).json({ token, user: userResponse });
 
 module.exports.getUserProfile = async (req,res,next) => {
     res.status(200).json(req.user);
+};
 
-}
+module.exports.updateUserProfile = async (req, res, next) => {
+    try {
+        const { fullname } = req.body;
+        if (fullname) {
+            if (fullname.firstname) req.user.fullname.firstname = fullname.firstname;
+            if (fullname.lastname) req.user.fullname.lastname = fullname.lastname;
+        }
+        await req.user.save();
+        const userObj = req.user.toObject();
+        delete userObj.password;
+        res.status(200).json({ user: userObj, message: 'Profile updated successfully' });
+    } catch (err) {
+        res.status(500).json({ message: 'Error updating profile', error: err.message });
+    }
+};
 
 module.exports.logoutUser = async (req, res, next) => {
     const token = req.cookies?.token || req.headers.authorization?.split(' ')[1];
-    await blackListTokenModel.create({ token });
+    if (token) {
+        await blackListTokenModel.create({ token });
+    }
     res.clearCookie('token');
     res.status(200).json({ message: 'Logged out' });
 

@@ -31,9 +31,22 @@ socketId: {
 },
 status: {
     type: String,
-    enum: [ 'active', 'inactive'],
-    default: 'inactive',
-
+    enum: [ 'active', 'inactive', 'pending'],
+    default: 'active',
+},
+documentsVerified: {
+    type: Boolean,
+    default: true
+},
+location: {
+    ltd: {
+        type: Number,
+        default: 28.6139
+    },
+    lng: {
+        type: Number,
+        default: 77.2090
+    }
 },
 vehicle: {
     color: {
@@ -42,41 +55,38 @@ vehicle: {
         minlength: [3, 'Color must be at least 3 characters long'],
     },
     plate: {
-    type: String,
-    required: true,
-    minlength: [3, 'Plate must be at least 3 characters long'],
-},
-capacity: {
-    type: Number,
-    required: true,
-    min: [1, 'Capacity must be at least 1'],
-},
-vehicleType: {
-    type: String,
-    required: true,
-    enum: ['car', 'auto', 'motorcycle'],
-},
-latitude: {
-    type: Number,
-    required: true,
-    min: [-90, 'Latitude must be at least -90'],
-    max: [90, 'Latitude cannot exceed 90']
-},
-
-longitude: {
-    type: Number,
-    required: true,
-    min: [-180, 'Longitude must be at least -180'],
-    max: [180, 'Longitude cannot exceed 180']
-},
+        type: String,
+        required: true,
+        minlength: [3, 'Plate must be at least 3 characters long'],
+    },
+    capacity: {
+        type: Number,
+        required: true,
+        min: [1, 'Capacity must be at least 1'],
+    },
+    vehicleType: {
+        type: String,
+        required: true,
+        enum: ['car', 'auto', 'motorcycle'],
+    },
+    latitude: {
+        type: Number,
+        min: [-90, 'Latitude must be at least -90'],
+        max: [90, 'Latitude cannot exceed 90']
+    },
+    longitude: {
+        type: Number,
+        min: [-180, 'Longitude must be at least -180'],
+        max: [180, 'Longitude cannot exceed 180']
+    },
 }
 })
 
 
 captainSchema.methods.generateAuthToken = function () {
     const token = jwt.sign(
-        { _id: this._id },
-        process.env.JWT_SECRET,
+        { _id: this._id, role: 'captain' },
+        process.env.JWT_SECRET || 'ridepass_pro_default_jwt_secret',
         { expiresIn: '24h' }
     );
 

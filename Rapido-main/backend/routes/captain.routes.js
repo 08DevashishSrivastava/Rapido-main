@@ -47,8 +47,13 @@ router.post('/login', [
     captainController.loginCaptain
 )
 
-router.get('/profile' , authMiddleware.authCaptain, captainController.getCaptainProfile)
-router.get('/logout', authMidddleware.authCaptain , captainController.logoutCaptain)
+router.get('/profile', authMiddleware.authCaptain, captainController.getCaptainProfile);
+router.get('/logout', authMiddleware.authCaptain, captainController.logoutCaptain);
+router.post('/logout', authMiddleware.authCaptain, captainController.logoutCaptain);
+router.post('/status', authMiddleware.authCaptain, captainController.updateCaptainStatus);
+router.patch('/status', authMiddleware.authCaptain, captainController.updateCaptainStatus);
+router.post('/location', authMiddleware.authCaptain, captainController.updateCaptainLocation);
+router.patch('/location', authMiddleware.authCaptain, captainController.updateCaptainLocation);
 
 module.exports = router;
 

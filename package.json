@@ -1,0 +1,16 @@
+{
+  "name": "ridepass-pro-workspace",
+  "version": "1.0.0",
+  "description": "RidePass Pro — Smart Ride Booking & Subscription Platform Workspace",
+  "private": true,
+  "scripts": {
+    "start:backend": "node Rapido-main/backend/server.js",
+    "dev:backend": "node Rapido-main/backend/server.js",
+    "test:backend": "node --test Rapido-main/backend/tests/ridepass_pro.test.js",
+    "build:frontend": "npm --prefix Rapido-main/frontend run build",
+    "dev:frontend": "npm --prefix Rapido-main/frontend run dev",
+    "test": "npm run test:backend"
+  },
+  "author": "Devashish Srivastava",
+  "license": "ISC"
+}

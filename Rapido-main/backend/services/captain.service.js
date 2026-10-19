@@ -8,7 +8,9 @@ module.exports.createCaptain = async ({
     color,
     plate,
     capacity,
-    vehicleType
+    vehicleType,
+    latitude,
+    longitude
 }) => {
 
     if (
@@ -23,6 +25,9 @@ module.exports.createCaptain = async ({
         throw new Error('All fields are required');
     }
 
+    const defaultLat = latitude !== undefined && latitude !== null ? Number(latitude) : 28.6139;
+    const defaultLng = longitude !== undefined && longitude !== null ? Number(longitude) : 77.2090;
+
     const captain = await captainModel.create({
         fullname: {
             firstname,
@@ -30,11 +35,19 @@ module.exports.createCaptain = async ({
         },
         email,
         password,
+        status: 'active',
+        documentsVerified: true,
+        location: {
+            ltd: defaultLat,
+            lng: defaultLng
+        },
         vehicle: {
             color,
             plate,
             capacity,
-            vehicleType
+            vehicleType,
+            latitude: defaultLat,
+            longitude: defaultLng
         }
     });
 
