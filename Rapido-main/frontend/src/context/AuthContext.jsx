@@ -91,6 +91,39 @@ export const AuthProvider = ({ children }) => {
     return captainData;
   };
 
+  const sendUserOtp = async (email, purpose = 'login') => {
+    const res = await authAPI.sendUserOtp({ email, purpose });
+    return res.data;
+  };
+
+  const verifyUserOtp = async (email, otp, purpose = 'login', fullname = null) => {
+    const res = await authAPI.verifyUserOtp({ email, otp, purpose, fullname });
+    const { token: authToken, user: userData } = res.data;
+    localStorage.setItem('ridepass_token', authToken);
+    const userRole = userData.role === 'admin' ? 'admin' : 'user';
+    localStorage.setItem('ridepass_role', userRole);
+    setToken(authToken);
+    setUser(userData);
+    setRole(userRole);
+    return userData;
+  };
+
+  const sendCaptainOtp = async (email, purpose = 'login') => {
+    const res = await authAPI.sendCaptainOtp({ email, purpose });
+    return res.data;
+  };
+
+  const verifyCaptainOtp = async (email, otp, purpose = 'login', fullname = null, vehicle = null) => {
+    const res = await authAPI.verifyCaptainOtp({ email, otp, purpose, fullname, vehicle });
+    const { token: authToken, captain: captainData } = res.data;
+    localStorage.setItem('ridepass_token', authToken);
+    localStorage.setItem('ridepass_role', 'captain');
+    setToken(authToken);
+    setCaptain(captainData);
+    setRole('captain');
+    return captainData;
+  };
+
   const logout = async () => {
     try {
       if (role === 'captain') {
@@ -110,16 +143,25 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const updateProfile = async (firstname, lastname) => {
-    const res = await authAPI.updateProfile({ fullname: { firstname, lastname } });
-    setUser(res.data.user);
-    return res.data.user;
+  const updateProfile = async (firstname, lastname, extra = {}) => {
+    if (role === 'captain') {
+      const res = await authAPI.updateCaptainProfile({
+        fullname: { firstname, lastname },
+        vehicle: extra.vehicle
+      });
+      setCaptain(res.data.captain);
+      return res.data.captain;
+    } else {
+      const res = await authAPI.updateProfile({ fullname: { firstname, lastname } });
+      setUser(res.data.user);
+      return res.data.user;
+    }
   };
 
-  // Default display name fallback: Devashish Srivastava
+  // Derive dynamic display name from authenticated user or captain
   const displayName = user?.fullname
-    ? `${user.fullname.firstname} ${user.fullname.lastname || ''}`.trim()
-    : (captain?.fullname ? `${captain.fullname.firstname} ${captain.fullname.lastname || ''}`.trim() : 'Devashish Srivastava');
+    ? `${user.fullname.firstname || ''} ${user.fullname.lastname || ''}`.trim()
+    : (captain?.fullname ? `${captain.fullname.firstname || ''} ${captain.fullname.lastname || ''}`.trim() : '');
 
   return (
     <AuthContext.Provider
@@ -132,8 +174,12 @@ export const AuthProvider = ({ children }) => {
         displayName,
         loginUser,
         registerUser,
+        sendUserOtp,
+        verifyUserOtp,
         loginCaptain,
         registerCaptain,
+        sendCaptainOtp,
+        verifyCaptainOtp,
         logout,
         updateProfile,
         isAuthenticated: !!token

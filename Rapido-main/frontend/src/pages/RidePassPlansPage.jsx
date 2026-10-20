@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 
 export default function RidePassPlansPage() {
-  const { user, displayName } = useAuth();
+  const { user, displayName, isAuthenticated } = useAuth();
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState(null);
@@ -38,6 +38,10 @@ export default function RidePassPlansPage() {
   }, []);
 
   const handleSelectPlan = (plan) => {
+    if (!isAuthenticated) {
+      navigate('/login?redirect=/plans');
+      return;
+    }
     setSelectedPlan(plan);
     setErrorMessage('');
     setSuccessMessage('');

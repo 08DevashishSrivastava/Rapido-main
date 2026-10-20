@@ -40,13 +40,18 @@ api.interceptors.response.use(
 export const authAPI = {
   userRegister: (data) => api.post('/users/register', data),
   userLogin: (data) => api.post('/users/login', data),
+  sendUserOtp: (data) => api.post('/users/send-otp', data),
+  verifyUserOtp: (data) => api.post('/users/verify-otp', data),
   userProfile: () => api.get('/users/profile'),
   updateProfile: (data) => api.put('/users/profile', data),
   userLogout: () => api.post('/users/logout'),
 
   captainRegister: (data) => api.post('/captains/register', data),
   captainLogin: (data) => api.post('/captains/login', data),
+  sendCaptainOtp: (data) => api.post('/captains/send-otp', data),
+  verifyCaptainOtp: (data) => api.post('/captains/verify-otp', data),
   captainProfile: () => api.get('/captains/profile'),
+  updateCaptainProfile: (data) => api.put('/captains/profile', data),
   updateCaptainStatus: (status) => api.post('/captains/status', { status }),
   updateCaptainLocation: (ltd, lng) => api.post('/captains/location', { ltd, lng }),
   captainLogout: () => api.post('/captains/logout')
@@ -57,6 +62,7 @@ export const rideAPI = {
   getFareEstimates: (pickup, destination) =>
     api.get(`/rides/get-fare?pickup=${encodeURIComponent(pickup)}&destination=${encodeURIComponent(destination)}`),
   createRide: (data) => api.post('/rides/create', data),
+  getRideDetails: (rideId) => api.get(`/rides/${rideId}`),
   confirmRide: (rideId) => api.post('/rides/confirm', { rideId }),
   markArrived: (rideId) => api.post('/rides/arrived', { rideId }),
   startTrip: (rideId, otp) => api.post('/rides/start-ride', { rideId, otp }),

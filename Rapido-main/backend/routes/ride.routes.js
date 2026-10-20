@@ -105,4 +105,33 @@ router.get('/captain-rides', authMiddleware.authCaptain, rideController.getCapta
 // Get available pending rides for captains
 router.get('/available', authMiddleware.authCaptain, rideController.getAvailableRides);
 
+// Get single ride details (Passenger or Captain)
+router.get(
+    '/:rideId',
+    async (req, res, next) => {
+        const token = req.cookies?.token || req.headers.authorization?.split(' ')[1];
+        if (!token) return res.status(401).json({ message: 'Unauthorized' });
+        try {
+            const jwt = require('jsonwebtoken');
+            const userModel = require('../models/user.model');
+            const captainModel = require('../models/captain.model');
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'ridepass_pro_default_jwt_secret');
+            const user = await userModel.findById(decoded._id);
+            if (user) {
+                req.user = user;
+                return next();
+            }
+            const captain = await captainModel.findById(decoded._id);
+            if (captain) {
+                req.captain = captain;
+                return next();
+            }
+            return res.status(401).json({ message: 'Unauthorized' });
+        } catch (e) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+    },
+    rideController.getRideDetails
+);
+
 module.exports = router;

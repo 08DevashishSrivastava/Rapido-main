@@ -46,9 +46,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Root endpoint preserved
+// Root endpoint
 app.get('/', (req, res) => {
-    res.send('Devashish Srivastava');
+    res.status(200).json({
+        name: 'RidePass Pro API',
+        status: 'online',
+        version: '1.0.0'
+    });
 });
 
 // Health check endpoint
@@ -56,18 +60,23 @@ app.get('/api/health', (req, res) => {
     res.status(200).json({
         status: 'online',
         service: 'RidePass Pro API',
-        developer: 'Devashish Srivastava',
         timestamp: new Date().toISOString()
     });
 });
 
 // Mounted Routes
 app.use('/users', userRoutes);
+app.use('/user', userRoutes);
 app.use('/captains', captainRoutes);
+app.use('/captain', captainRoutes);
 app.use('/rides', rideRoutes);
+app.use('/ride', rideRoutes);
 app.use('/subscriptions', subscriptionRoutes);
+app.use('/subscription', subscriptionRoutes);
 app.use('/payments', paymentRoutes);
+app.use('/payment', paymentRoutes);
 app.use('/complaints', complaintRoutes);
+app.use('/complaint', complaintRoutes);
 app.use('/admin', adminRoutes);
 
 // Centralized 404 handler

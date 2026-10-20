@@ -45,9 +45,21 @@ router.post('/login', [
         .withMessage('Password must be at least 6 characters long')
 ],
     captainController.loginCaptain
-)
+);
+
+router.post('/send-otp', [
+    body('email').isEmail().withMessage('Valid email is required to send verification code'),
+    body('purpose').optional().isIn(['login', 'register']).withMessage('Invalid OTP purpose')
+], captainController.sendCaptainOtp);
+
+router.post('/verify-otp', [
+    body('email').isEmail().withMessage('Valid email is required'),
+    body('otp').isLength({ min: 6, max: 6 }).withMessage('Valid 6-digit verification code is required'),
+    body('purpose').optional().isIn(['login', 'register']).withMessage('Invalid OTP purpose')
+], captainController.verifyCaptainOtp);
 
 router.get('/profile', authMiddleware.authCaptain, captainController.getCaptainProfile);
+router.put('/profile', authMiddleware.authCaptain, captainController.updateCaptainProfile);
 router.get('/logout', authMiddleware.authCaptain, captainController.logoutCaptain);
 router.post('/logout', authMiddleware.authCaptain, captainController.logoutCaptain);
 router.post('/status', authMiddleware.authCaptain, captainController.updateCaptainStatus);

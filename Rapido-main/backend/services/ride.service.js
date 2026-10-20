@@ -284,6 +284,16 @@ const getAvailableRidesForCaptains = async (captain) => {
     .limit(20);
 };
 
+const getRideById = async (rideId, userId = null, captainId = null) => {
+    const query = { _id: rideId };
+    if (userId) query.user = userId;
+    if (captainId) query.captain = captainId;
+    return await Ride.findOne(query)
+        .populate('captain', 'fullname vehicle')
+        .populate('user', 'fullname email phone')
+        .populate('subscriptionApplied');
+};
+
 module.exports = {
     getDistanceAndDuration,
     calculateStandardFares,
@@ -297,5 +307,6 @@ module.exports = {
     rateRide,
     getUserRides,
     getCaptainRides,
-    getAvailableRidesForCaptains
+    getAvailableRidesForCaptains,
+    getRideById
 };

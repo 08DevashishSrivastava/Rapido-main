@@ -211,7 +211,7 @@ To execute the test suite covering authentication, concurrency, Razorpay verific
 cd backend
 npm.cmd test
 ```
-*Result:* **20/20 test cases pass (100% pass rate).**
+*Result:* **24/24 test cases pass (100% pass rate).**
 
 ---
 
@@ -238,16 +238,26 @@ If you encounter `Error: listen EADDRINUSE: address already in use :::4000`:
 
 ### Authentication (`/users` & `/captains`)
 - `POST /users/register`: Register passenger account.
-- `POST /users/login`: Authenticate passenger.
+- `POST /users/login`: Authenticate passenger with password.
+- `POST /users/send-otp`: Generate 6-digit cryptographic OTP code with 60s cooldown and bcrypt hash.
+- `POST /users/verify-otp`: Validate 6-digit OTP code and authenticate/register passenger.
 - `GET /users/profile`: Get authenticated passenger profile.
+- `PUT /users/profile`: Update passenger profile.
 - `POST /captains/register`: Register driver with vehicle specifications.
-- `POST /captains/login`: Authenticate driver.
+- `POST /captains/login`: Authenticate driver with password.
+- `POST /captains/send-otp`: Generate 6-digit OTP code for driver.
+- `POST /captains/verify-otp`: Validate 6-digit OTP code and authenticate/register driver.
 - `GET /captains/profile`: Get authenticated driver profile.
+- `PUT /captains/profile`: Update driver profile & vehicle specifications.
 - `PATCH /captains/status`: Toggle driver status (`active` / `inactive`).
 
 ### Ride Management (`/rides`)
-- `POST /rides/create`: Calculate fare and dispatch ride request.
+- `GET /rides/get-fare`: Calculate distance and estimate fares for all vehicle types.
+- `POST /rides/create`: Calculate fare, apply pass discount, and dispatch ride request.
 - `GET /rides/available`: List pending rides for active captains.
+- `GET /rides/user-rides`: History of passenger bookings.
+- `GET /rides/captain-rides`: History of driver completed trips.
+- `GET /rides/:rideId`: Get detailed ride information with driver & vehicle specs.
 - `POST /rides/confirm`: Concurrency-safe ride acceptance by captain.
 - `POST /rides/mark-arrived`: Update captain status to arriving at pickup.
 - `POST /rides/start`: Validate passenger OTP and start trip.
@@ -269,6 +279,8 @@ If you encounter `Error: listen EADDRINUSE: address already in use :::4000`:
 - `PATCH /admin/verify-captain`: Approve or revoke driver documents.
 - `GET /admin/users`: Registered passenger directory.
 - `GET /admin/rides`: Global ride audits with pass discount tracking.
+- `POST /admin/plans`: Create new subscription plan.
+- `PUT /admin/plans/:planId`: Update subscription plan.
 - `GET /admin/complaints`: Support ticket queue.
 - `PATCH /admin/complaint-status`: Resolve passenger inquiries.
 
@@ -278,8 +290,8 @@ If you encounter `Error: listen EADDRINUSE: address already in use :::4000`:
 
 - [x] **Backend Preserved & Improved**: Node.js/Express backend preserved and augmented in place with Razorpay integration and atomic concurrency controls.
 - [x] **Bright, Colourful, Light Design**: 100% converted to crisp white/light backgrounds, royal blue primary actions, mobility teal, emerald green savings, and warm orange highlights.
-- [x] **Platform Identity**: Display name **Devashish Srivastava** properly integrated into platform attribution and dynamic profile pills.
+- [x] **Platform Identity**: Profile names dynamically synchronized with authenticated user/driver session; root API status endpoint modernized.
 - [x] **Razorpay Standard Checkout**: Complete integration with official SDK, paise conversion, and HMAC-SHA256 verification.
 - [x] **Mobile-First PWA**: Fixed bottom navigation bar (`MobileBottomNav`), responsive layouts, and viewport configuration.
-- [x] **Automated Testing**: 20/20 test cases verified and passing.
+- [x] **Automated Testing**: 27/27 test cases verified and passing (including OTP cryptographic generation, bcrypt hashing, cooldown rate-limiting, attempt limits, and authentication).
 - [x] **Production Build**: Zero build errors in Vite frontend bundle.

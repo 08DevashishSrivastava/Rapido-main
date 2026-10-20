@@ -28,9 +28,6 @@ export default function Navbar() {
 
   const isActive = (path) => location.pathname === path;
 
-  // The active display name (falls back to Devashish Srivastava when configured/owner)
-  const activeName = displayName || 'Devashish Srivastava';
-
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -156,21 +153,21 @@ export default function Navbar() {
 
           {/* Right Header Section: Display Name & User Actions */}
           <div className="hidden md:flex items-center gap-4">
-            {/* Display Name Pill */}
-            <div className="flex items-center gap-2.5 px-3.5 py-1.5 bg-slate-50 border border-slate-200 rounded-full shadow-2xs">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <div className="flex flex-col text-left">
-                <span className="text-xs font-bold text-slate-900 tracking-tight">
-                  {activeName}
-                </span>
-                <span className="text-[10px] text-blue-600 font-semibold tracking-wide uppercase">
-                  {role ? role : 'PLATFORM USER'}
-                </span>
-              </div>
-            </div>
-
             {isAuthenticated ? (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
+                {/* Display Name Pill */}
+                <div className="flex items-center gap-2.5 px-3.5 py-1.5 bg-slate-50 border border-slate-200 rounded-full shadow-2xs">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <div className="flex flex-col text-left">
+                    <span className="text-xs font-bold text-slate-900 tracking-tight">
+                      {displayName || 'User'}
+                    </span>
+                    <span className="text-[10px] text-blue-600 font-semibold tracking-wide uppercase">
+                      {role ? role : 'PLATFORM USER'}
+                    </span>
+                  </div>
+                </div>
+
                 <Link
                   to="/profile"
                   className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
@@ -206,9 +203,11 @@ export default function Navbar() {
 
           {/* Mobile menu toggle */}
           <div className="md:hidden flex items-center gap-2">
-            <span className="text-xs font-bold text-blue-600 truncate max-w-[120px]">
-              {activeName.split(' ')[0]}
-            </span>
+            {isAuthenticated && displayName && (
+              <span className="text-xs font-bold text-blue-600 truncate max-w-[120px]">
+                {displayName.split(' ')[0]}
+              </span>
+            )}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 text-slate-600 hover:text-slate-900 rounded-xl hover:bg-slate-100 cursor-pointer"

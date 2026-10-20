@@ -11,11 +11,14 @@ const UserSubscription = require('../models/userSubscription.model');
 const SubscriptionLedger = require('../models/subscriptionLedger.model');
 const Payment = require('../models/payment.model');
 const BlacklistToken = require('../models/blacklistToken.model');
+const Complaint = require('../models/complaint.model');
+const Otp = require('../models/otp.model');
 
 // Services & Controllers
 const subscriptionService = require('../services/subscription.service');
 const rideService = require('../services/ride.service');
 const paymentService = require('../services/payment.service');
+const otpService = require('../services/otp.service');
 const connectToDb = require('../db/db');
 
 describe('RidePass Pro Comprehensive QA Automation Test Suite', async () => {
@@ -460,4 +463,251 @@ describe('RidePass Pro Comprehensive QA Automation Test Suite', async () => {
         const found = await BlacklistToken.findOne({ token });
         assert.ok(found);
     });
+
+    // TEST 21: Full ride booking lifecycle
+    await test('21. Full ride booking lifecycle: estimation -> booking -> arrival -> OTP start -> completion -> rating', async () => {
+        // Step A: Fare estimate
+        const estimate = await rideService.getFareEstimates({
+            pickup: 'Connaught Place',
+            destination: 'Noida Sector 62',
+            user: testUser
+        });
+        assert.ok(estimate.distance > 0);
+        assert.ok(estimate.fares.car);
+        assert.ok(estimate.fares.car.finalFare >= 0);
+
+        // Step B: Booking
+        const ride = await rideService.createRide({
+            user: testUser,
+            pickup: 'Connaught Place',
+            destination: 'Noida Sector 62',
+            vehicleType: 'car'
+        });
+        assert.ok(ride._id);
+        assert.strictEqual(ride.status, 'pending');
+        assert.ok(ride.otp);
+
+        // Step C: Driver assignment
+        const acceptedRide = await rideService.acceptRide({
+            rideId: ride._id,
+            captainId: testCaptain._id
+        });
+        assert.strictEqual(acceptedRide.status, 'accepted');
+
+        // Step D: Captain marks arrived
+        const arrivedRide = await rideService.markArrived({
+            rideId: ride._id,
+            captainId: testCaptain._id
+        });
+        assert.strictEqual(arrivedRide.status, 'arriving');
+
+        // Step E: Trip starts with valid OTP
+        const ongoingRide = await rideService.startTrip({
+            rideId: ride._id,
+            captainId: testCaptain._id,
+            otp: ride.otp
+        });
+        assert.strictEqual(ongoingRide.status, 'ongoing');
+        assert.ok(ongoingRide.startedAt);
+
+        // Step F: Complete trip
+        const completedRide = await rideService.completeTrip({
+            rideId: ride._id,
+            captainId: testCaptain._id
+        });
+        assert.strictEqual(completedRide.status, 'completed');
+        assert.ok(completedRide.completedAt);
+
+        // Step G: Passenger rates the ride
+        const ratedRide = await rideService.rateRide({
+            rideId: ride._id,
+            userId: testUser._id,
+            rating: 5,
+            review: 'Excellent smooth ride!'
+        });
+        assert.strictEqual(ratedRide.rating, 5);
+        assert.strictEqual(ratedRide.review, 'Excellent smooth ride!');
+    });
+
+    // TEST 22: Single ride details lookup via getRideById
+    await test('22. Single ride lookup via getRideById populates driver and passenger', async () => {
+        const ride = await rideService.createRide({
+            user: testUser,
+            pickup: 'Test Location Alpha',
+            destination: 'Test Location Beta',
+            vehicleType: 'auto'
+        });
+        await rideService.acceptRide({
+            rideId: ride._id,
+            captainId: testCaptain._id
+        });
+
+        const fetched = await rideService.getRideById(ride._id, testUser._id);
+        assert.ok(fetched);
+        assert.strictEqual(fetched.pickup, 'Test Location Alpha');
+        assert.ok(fetched.captain);
+        assert.strictEqual(fetched.captain.vehicle.plate, testCaptain.vehicle.plate);
+    });
+
+    // TEST 23: Captain profile update
+    await test('23. Captain profile update persists vehicle and name modifications', async () => {
+        testCaptain.fullname.firstname = 'Vikram';
+        testCaptain.vehicle.color = 'Midnight Black';
+        await testCaptain.save();
+
+        const updated = await Captain.findById(testCaptain._id);
+        assert.strictEqual(updated.fullname.firstname, 'Vikram');
+        assert.strictEqual(updated.vehicle.color, 'Midnight Black');
+    });
+
+    // TEST 24: Support complaint lifecycle
+    await test('24. Support complaint creation and admin resolution', async () => {
+        const complaint = await Complaint.create({
+            user: testUser._id,
+            subject: 'Billing query regarding excess fare',
+            category: 'billing',
+            description: 'Please clarify excess fare calculation above cap.'
+        });
+        assert.ok(complaint._id);
+        assert.strictEqual(complaint.status, 'open');
+
+        // Admin resolves
+        complaint.status = 'resolved';
+        complaint.adminNotes = 'Resolved: excess fare explained.';
+        await complaint.save();
+
+        const resolved = await Complaint.findById(complaint._id);
+        assert.strictEqual(resolved.status, 'resolved');
+        assert.strictEqual(resolved.adminNotes, 'Resolved: excess fare explained.');
+    });
+
+    // TEST 25: OTP generation, cryptographic randomness, bcrypt hashing, and cooldown rate limiting
+    await test('25. OTP generation, bcrypt hashing, and cooldown rate limiting', async () => {
+        const testEmail = `otp_test_${Date.now()}@test.com`;
+
+        // 1. Generate OTP
+        const res1 = await otpService.sendOtp({
+            contact: testEmail,
+            role: 'user',
+            purpose: 'login'
+        });
+
+        assert.strictEqual(res1.success, true);
+        assert.ok(res1.devOtp);
+        assert.strictEqual(res1.devOtp.length, 6);
+
+        // 2. Verify stored in DB as hash (NOT plain text)
+        const storedOtp = await Otp.findOne({ contact: testEmail });
+        assert.ok(storedOtp);
+        assert.notStrictEqual(storedOtp.otpHash, res1.devOtp);
+        assert.ok(storedOtp.otpHash.startsWith('$2b$') || storedOtp.otpHash.startsWith('$2a$'));
+
+        // 3. Attempt immediate duplicate request must trigger cooldown rate-limiting (429)
+        await assert.rejects(
+            async () => {
+                await otpService.sendOtp({ contact: testEmail, role: 'user', purpose: 'login' });
+            },
+            (err) => {
+                assert.strictEqual(err.statusCode, 429);
+                assert.match(err.message, /Please wait .* seconds/);
+                return true;
+            }
+        );
+    });
+
+    // TEST 26: OTP verification attempt limits, rejection of invalid code, and single-use replay prevention
+    await test('26. OTP verification attempt limits and single-use replay prevention', async () => {
+        const testEmail = `otp_verify_${Date.now()}@test.com`;
+        const sendResult = await otpService.sendOtp({ contact: testEmail, role: 'user', purpose: 'login' });
+        const validOtp = sendResult.devOtp;
+
+        // 1. Reject invalid code
+        await assert.rejects(
+            async () => {
+                await otpService.verifyOtp({ contact: testEmail, otp: '000000', role: 'user', purpose: 'login' });
+            },
+            /Invalid verification code/
+        );
+
+        // Check attempts incremented
+        const recordAfterFail = await Otp.findOne({ contact: testEmail });
+        assert.strictEqual(recordAfterFail.attempts, 1);
+
+        // 2. Accept valid code
+        const verifySuccess = await otpService.verifyOtp({ contact: testEmail, otp: validOtp, role: 'user', purpose: 'login' });
+        assert.strictEqual(verifySuccess.success, true);
+
+        // 3. Prevent replay attacks (code cannot be used a second time)
+        await assert.rejects(
+            async () => {
+                await otpService.verifyOtp({ contact: testEmail, otp: validOtp, role: 'user', purpose: 'login' });
+            },
+            /Verification code has expired or is invalid/
+        );
+    });
+
+    // TEST 27: End-to-end OTP sign-in / auto-registration for passenger and captain
+    await test('27. User and Captain controller OTP authentication flow', async () => {
+        const userController = require('../controllers/user.controller');
+        const captainController = require('../controllers/captain.controller');
+
+        // Step 1: Send OTP for a passenger
+        const passengerEmail = `otp_passenger_${Date.now()}@test.com`;
+        let sentResult;
+        const mockReqSend = {
+            body: { email: passengerEmail, purpose: 'login' }
+        };
+        const mockResSend = {
+            statusCode: 200,
+            status(code) { this.statusCode = code; return this; },
+            json(payload) { sentResult = payload; return this; }
+        };
+
+        await userController.sendUserOtp(mockReqSend, mockResSend, () => {});
+        assert.strictEqual(mockResSend.statusCode, 200);
+        assert.ok(sentResult.devOtp);
+
+        // Step 2: Verify OTP and sign in passenger
+        let verifiedResult;
+        const mockReqVerify = {
+            body: {
+                email: passengerEmail,
+                otp: sentResult.devOtp,
+                purpose: 'login',
+                fullname: { firstname: 'Aarav', lastname: 'Kapoor' }
+            }
+        };
+        const mockResVerify = {
+            statusCode: 200,
+            status(code) { this.statusCode = code; return this; },
+            json(payload) { verifiedResult = payload; return this; }
+        };
+
+        await userController.verifyUserOtp(mockReqVerify, mockResVerify, () => {});
+        assert.strictEqual(mockResVerify.statusCode, 200);
+        assert.ok(verifiedResult.token);
+        assert.strictEqual(verifiedResult.user.email, passengerEmail);
+        assert.strictEqual(verifiedResult.user.fullname.firstname, 'Aarav');
+        assert.strictEqual(verifiedResult.isNewUser, true);
+
+        // Step 3: Verify subsequent login for existing user returns isNewUser = false
+        // Bypass cooldown for testing
+        await Otp.deleteMany({ contact: passengerEmail });
+        const resendResult = await otpService.sendOtp({ contact: passengerEmail, role: 'user', purpose: 'login' });
+        
+        let loginResult;
+        const mockReqLogin = {
+            body: { email: passengerEmail, otp: resendResult.devOtp, purpose: 'login' }
+        };
+        const mockResLogin = {
+            statusCode: 200,
+            status(code) { this.statusCode = code; return this; },
+            json(payload) { loginResult = payload; return this; }
+        };
+        await userController.verifyUserOtp(mockReqLogin, mockResLogin, () => {});
+        assert.strictEqual(mockResLogin.statusCode, 200);
+        assert.strictEqual(loginResult.isNewUser, false);
+        assert.strictEqual(loginResult.user.fullname.firstname, 'Aarav');
+    });
 });
+

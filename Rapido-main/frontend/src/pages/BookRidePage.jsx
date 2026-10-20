@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { rideAPI, subscriptionAPI } from '../services/api';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
+import RideMap from '../components/RideMap';
 import {
   Car,
   Bike,
@@ -15,7 +18,8 @@ import {
   AlertCircle,
   Star,
   RefreshCw,
-  XCircle
+  XCircle,
+  UserCheck
 } from 'lucide-react';
 
 const POPULAR_LOCATIONS = [
@@ -28,9 +32,17 @@ const POPULAR_LOCATIONS = [
 ];
 
 export default function BookRidePage() {
-  const [pickup, setPickup] = useState('Connaught Place, New Delhi');
-  const [destination, setDestination] = useState('Indira Gandhi International Airport (DEL)');
-  const [selectedVehicle, setSelectedVehicle] = useState('car');
+  const [searchParams] = useSearchParams();
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  const initialPickup = searchParams.get('pickup') || 'Connaught Place, New Delhi';
+  const initialDestination = searchParams.get('destination') || 'Indira Gandhi International Airport (DEL)';
+  const initialVehicle = searchParams.get('vehicle') || 'car';
+
+  const [pickup, setPickup] = useState(initialPickup);
+  const [destination, setDestination] = useState(initialDestination);
+  const [selectedVehicle, setSelectedVehicle] = useState(initialVehicle);
   const [fareEstimates, setFareEstimates] = useState(null);
   const [estimating, setEstimating] = useState(false);
   const [activeSub, setActiveSub] = useState(null);
@@ -45,20 +57,36 @@ export default function BookRidePage() {
   const [rated, setRated] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Fetch active subscription
+  // Fetch active subscription and restore any active booking on page refresh
   useEffect(() => {
+    if (!isAuthenticated) return;
+
     subscriptionAPI.getActiveSubscription()
       .then(res => setActiveSub(res.data.subscription))
       .catch(() => setActiveSub(null));
-  }, []);
+
+    // Restore active ride if user refreshed or navigated back
+    rideAPI.getUserRides()
+      .then(res => {
+        const rides = res.data?.rides || [];
+        const active = rides.find(r => ['pending', 'accepted', 'arriving', 'ongoing'].includes(r.status));
+        if (active) {
+          setCurrentRide(active);
+          setPickup(active.pickup);
+          setDestination(active.destination);
+          if (active.vehicleType) setSelectedVehicle(active.vehicleType);
+        }
+      })
+      .catch(() => {});
+  }, [isAuthenticated]);
 
   // Calculate fare estimates on pickup/destination change
   const fetchEstimates = async () => {
-    if (!pickup || !destination) return;
+    if (!pickup.trim() || !destination.trim()) return;
     setEstimating(true);
     setErrorMessage('');
     try {
-      const res = await rideAPI.getFareEstimates(pickup, destination);
+      const res = await rideAPI.getFareEstimates(pickup.trim(), destination.trim());
       setFareEstimates(res.data);
     } catch (err) {
       console.error(err);
@@ -92,12 +120,22 @@ export default function BookRidePage() {
   }, [currentRide]);
 
   const handleBookRide = async () => {
+    if (!isAuthenticated) {
+      navigate('/login?redirect=/book');
+      return;
+    }
+
+    if (!pickup.trim() || !destination.trim()) {
+      setErrorMessage('Please provide both pickup and destination locations.');
+      return;
+    }
+
     setBookingLoading(true);
     setErrorMessage('');
     try {
       const res = await rideAPI.createRide({
-        pickup,
-        destination,
+        pickup: pickup.trim(),
+        destination: destination.trim(),
         vehicleType: selectedVehicle
       });
       setCurrentRide(res.data.ride);
@@ -195,6 +233,34 @@ export default function BookRidePage() {
               </div>
             )}
 
+            {/* Assigned Driver Details Card */}
+            {currentRide.captain && typeof currentRide.captain === 'object' && (
+              <div className="p-4 bg-gradient-to-r from-slate-50 to-blue-50/40 border border-slate-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-bold text-base shadow-sm">
+                    {currentRide.captain.fullname?.firstname?.[0] || 'D'}
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider block">Assigned Captain</span>
+                    <span className="text-sm font-black text-slate-900 block">
+                      {currentRide.captain.fullname ? `${currentRide.captain.fullname.firstname} ${currentRide.captain.fullname.lastname || ''}`.trim() : 'Verified Driver'}
+                    </span>
+                    <span className="text-xs text-slate-600 capitalize">
+                      {currentRide.captain.vehicle?.color ? `${currentRide.captain.vehicle.color} ` : ''}
+                      {currentRide.captain.vehicle?.vehicleType || currentRide.vehicleType}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="px-4 py-2 bg-white border border-slate-300 rounded-xl text-left sm:text-right shadow-2xs">
+                  <span className="text-[10px] text-slate-500 block uppercase font-bold">Vehicle Plate</span>
+                  <span className="text-xs font-black text-slate-900 tracking-wider">
+                    {currentRide.captain.vehicle?.plate || 'Verified Vehicle'}
+                  </span>
+                </div>
+              </div>
+            )}
+
             {/* Status explanation */}
             {currentRide.status === 'pending' && (
               <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 flex items-center gap-3">
@@ -279,9 +345,9 @@ export default function BookRidePage() {
               </div>
             )}
 
-            {/* Cancellation button */}
-            {['pending', 'accepted'].includes(currentRide.status) && (
-              <div className="flex justify-end pt-2">
+            {/* Actions: Cancellation or Book Another Ride */}
+            <div className="flex justify-end gap-3 pt-2">
+              {['pending', 'accepted'].includes(currentRide.status) && (
                 <Button
                   variant="danger"
                   size="sm"
@@ -290,8 +356,22 @@ export default function BookRidePage() {
                 >
                   Cancel Ride
                 </Button>
-              </div>
-            )}
+              )}
+
+              {['completed', 'cancelled'].includes(currentRide.status) && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => {
+                    setCurrentRide(null);
+                    setRated(false);
+                    setReviewText('');
+                  }}
+                >
+                  Book Another Ride
+                </Button>
+              )}
+            </div>
           </div>
         </Card>
       )}
@@ -357,6 +437,13 @@ export default function BookRidePage() {
               </div>
             </div>
           </Card>
+
+          {/* Live Route Map */}
+          <RideMap
+            pickup={pickup}
+            destination={destination}
+            className="h-72 sm:h-80"
+          />
 
           {/* Vehicle Category Selector */}
           <Card>
@@ -502,17 +589,28 @@ export default function BookRidePage() {
               </div>
 
               {/* Booking CTA */}
-              <Button
-                variant={selectedFare?.finalFare === 0 ? 'success' : 'primary'}
-                size="lg"
-                loading={bookingLoading}
-                onClick={handleBookRide}
-                className="w-full text-base font-bold shadow-md"
-              >
-                {selectedFare?.finalFare === 0
-                  ? 'Confirm Ride with RidePass (₹0)'
-                  : `Confirm & Book Ride (₹${selectedFare?.finalFare || 0})`}
-              </Button>
+              {isAuthenticated ? (
+                <Button
+                  variant={selectedFare?.finalFare === 0 ? 'success' : 'primary'}
+                  size="lg"
+                  loading={bookingLoading}
+                  onClick={handleBookRide}
+                  className="w-full text-base font-bold shadow-md cursor-pointer"
+                >
+                  {selectedFare?.finalFare === 0
+                    ? 'Confirm Ride with RidePass (₹0)'
+                    : `Confirm & Book Ride (₹${selectedFare?.finalFare || 0})`}
+                </Button>
+              ) : (
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onClick={() => navigate('/login?redirect=/book')}
+                  className="w-full text-base font-bold shadow-md cursor-pointer"
+                >
+                  Sign In to Book This Ride
+                </Button>
+              )}
 
               <div className="text-[11px] text-slate-500 text-center space-y-1">
                 <p>• Zero cancellation fee within 5 minutes of booking.</p>

@@ -15,10 +15,22 @@ import {
 
 export default function ProfilePage() {
   const { user, captain, role, updateProfile } = useAuth();
-  const [firstname, setFirstname] = useState(user?.fullname?.firstname || captain?.fullname?.firstname || 'Devashish');
-  const [lastname, setLastname] = useState(user?.fullname?.lastname || captain?.fullname?.lastname || 'Srivastava');
+  const [firstname, setFirstname] = useState(user?.fullname?.firstname || captain?.fullname?.firstname || '');
+  const [lastname, setLastname] = useState(user?.fullname?.lastname || captain?.fullname?.lastname || '');
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileMessage, setProfileMessage] = useState('');
+  const [profileError, setProfileError] = useState('');
+
+  // Sync profile data when auth object updates
+  useEffect(() => {
+    if (user?.fullname) {
+      setFirstname(user.fullname.firstname || '');
+      setLastname(user.fullname.lastname || '');
+    } else if (captain?.fullname) {
+      setFirstname(captain.fullname.firstname || '');
+      setLastname(captain.fullname.lastname || '');
+    }
+  }, [user, captain]);
 
   // Support complaint form
   const [subject, setSubject] = useState('');
@@ -36,15 +48,22 @@ export default function ProfilePage() {
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
-    setProfileLoading(true);
     setProfileMessage('');
+    setProfileError('');
+
+    if (firstname.trim().length < 3) {
+      setProfileError('First name must be at least 3 characters long');
+      return;
+    }
+
+    setProfileLoading(true);
     try {
-      await updateProfile(firstname, lastname);
+      await updateProfile(firstname.trim(), lastname.trim());
       setProfileMessage('Profile updated successfully!');
       setTimeout(() => setProfileMessage(''), 3000);
     } catch (err) {
       console.error(err);
-      setProfileMessage('Failed to update profile');
+      setProfileError(err.response?.data?.message || 'Failed to update profile');
     } finally {
       setProfileLoading(false);
     }
@@ -101,6 +120,13 @@ export default function ProfilePage() {
                 <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs flex items-center gap-2 font-medium">
                   <CheckCircle className="w-4 h-4 shrink-0 text-emerald-600" />
                   <span>{profileMessage}</span>
+                </div>
+              )}
+
+              {profileError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs flex items-center gap-2 font-medium">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                  <span>{profileError}</span>
                 </div>
               )}
 

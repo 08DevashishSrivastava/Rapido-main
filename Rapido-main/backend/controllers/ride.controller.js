@@ -188,3 +188,19 @@ module.exports.getAvailableRides = async (req, res) => {
         res.status(500).json({ message: 'Failed to fetch available rides', error: err.message });
     }
 };
+
+// Get single ride details
+module.exports.getRideDetails = async (req, res) => {
+    try {
+        const { rideId } = req.params;
+        const userId = req.user ? req.user._id : null;
+        const captainId = req.captain ? req.captain._id : null;
+        const ride = await rideService.getRideById(rideId, userId, captainId);
+        if (!ride) {
+            return res.status(404).json({ message: 'Ride not found' });
+        }
+        res.status(200).json({ ride });
+    } catch (err) {
+        res.status(500).json({ message: 'Failed to fetch ride details', error: err.message });
+    }
+};

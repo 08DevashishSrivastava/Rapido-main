@@ -180,7 +180,7 @@ npm.cmd test
 npm test
 ```
 
-*Expected output: 20 passed, 0 failed.*
+*Expected output: 24 passed, 0 failed.*
 
 ---
 
@@ -204,8 +204,8 @@ Server is running on port 4000
 ```
 
 Verify backend health in browser or curl:
-- `http://localhost:4000/` → Returns `"Devashish Srivastava"`
-- `http://localhost:4000/api/health` → Returns API status
+- `http://localhost:4000/` → Returns `{ "name": "RidePass Pro API", "status": "online", "version": "1.0.0" }`
+- `http://localhost:4000/api/health` → Returns API health status
 - `http://localhost:4000/subscriptions/plans` → Returns RidePass plans
 
 ---
@@ -241,15 +241,20 @@ Open `http://localhost:5173/` in your browser.
 
 ### Authentication & Users (`/users`)
 - `POST /users/register` — Register passenger (`fullname.firstname`, `fullname.lastname`, `email`, `password`)
-- `POST /users/login` — Authenticate passenger, returns JWT
+- `POST /users/login` — Authenticate passenger with email & password, returns JWT
+- `POST /users/send-otp` — Generate 6-digit cryptographic OTP code with 60s cooldown & bcrypt hash
+- `POST /users/verify-otp` — Verify 6-digit OTP code, authenticate or auto-register passenger
 - `GET /users/profile` — Get authenticated passenger profile (Requires Bearer token)
 - `PUT /users/profile` — Update passenger name
 - `POST /users/logout` — Blacklists JWT token for 24 hours
 
 ### Drivers / Captains (`/captains`)
 - `POST /captains/register` — Register driver with vehicle specs (`color`, `plate`, `capacity`, `vehicleType`)
-- `POST /captains/login` — Authenticate driver
+- `POST /captains/login` — Authenticate driver with email & password
+- `POST /captains/send-otp` — Generate 6-digit OTP code for driver
+- `POST /captains/verify-otp` — Verify 6-digit OTP code, authenticate or auto-register driver
 - `GET /captains/profile` — Get driver profile & vehicle info
+- `PUT /captains/profile` — Update driver profile & vehicle specs
 - `POST /captains/status` — Toggle driver online/offline (`status: 'active' | 'inactive'`)
 - `POST /captains/location` — Update driver GPS coordinates (`ltd`, `lng`)
 - `POST /captains/logout` — Blacklists driver JWT token
@@ -266,6 +271,7 @@ Open `http://localhost:5173/` in your browser.
 - `GET /rides/user-rides` — Passenger trip history
 - `GET /rides/captain-rides` — Driver trip history
 - `GET /rides/available` — Live queue of pending requests matching driver vehicle
+- `GET /rides/:rideId` — Get single ride details (with populated driver and vehicle information)
 
 ### RidePass Subscriptions (`/subscriptions`)
 - `GET /subscriptions/plans` — List active subscription plans (Mini, Student, Pro)
@@ -309,27 +315,34 @@ The test suite in `Rapido-main/backend/tests/ridepass_pro.test.js` was executed 
 
 ```
 ▶ RidePass Pro Comprehensive QA Automation Test Suite
-  ✔ 1. Passenger registration and login (126ms)
-  ✔ 2. Driver registration and verification (57ms)
-  ✔ 3. Ride creation and driver assignment (22ms)
-  ✔ 4. Concurrent acceptance of the same ride strictly prevents race condition (13ms)
+  ✔ 1. Passenger registration and login (127ms)
+  ✔ 2. Driver registration and verification (60ms)
+  ✔ 3. Ride creation and driver assignment (23ms)
+  ✔ 4. Concurrent acceptance of the same ride strictly prevents race condition (10ms)
   ✔ 5. Invalid ride-state transitions are blocked (11ms)
-  ✔ 6. Subscription plan retrieval returns active plans (7ms)
-  ✔ 7. Subscription purchase and confirmed activation (18ms)
-  ✔ 8. Payment failure leaves subscription pending and unactivated (9ms)
-  ✔ 9. Expired subscription is detected and deactivated (10ms)
-  ✔ 10. Exhausted ride allowance prevents pass discount (4ms)
-  ✔ 11. Concurrent allowance reservation is atomic and prevents overdraft (14ms)
-  ✔ 12. RidePass application calculates discount and excess accurately (10ms)
-  ✔ 13. Cancellation automatically reverses allowance back to pass (19ms)
-  ✔ 14. Duplicate payment webhook is handled idempotently (10ms)
-  ✔ 15. Unauthorized subscription access is rejected (4ms)
-  ✔ 16. Passenger access to another user records is isolated (5ms)
-  ✔ 17. Driver access to another driver rides is isolated (6ms)
-  ✔ 18. Non-admin users are rejected from admin endpoints (6ms)
-  ✔ 19. Request validation returns structured errors array (68ms)
-  ✔ 20. Existing features continue to work: token blacklisting & root endpoint (104ms)
-✔ All 20 tests passed (604ms)
+  ✔ 6. Subscription plan retrieval returns active plans (4ms)
+  ✔ 7. Subscription purchase and confirmed activation (16ms)
+  ✔ 8. Payment failure leaves subscription pending and unactivated (11ms)
+  ✔ 9. Expired subscription is detected and deactivated (7ms)
+  ✔ 10. Exhausted ride allowance prevents pass discount (6ms)
+  ✔ 11. Concurrent allowance reservation is atomic and prevents overdraft (9ms)
+  ✔ 12. RidePass application calculates discount and excess accurately (8ms)
+  ✔ 13. Cancellation automatically reverses allowance back to pass (107ms)
+  ✔ 14. Duplicate payment webhook is handled idempotently (31ms)
+  ✔ 15. Unauthorized subscription access is rejected (25ms)
+  ✔ 16. Passenger access to another user records is isolated (19ms)
+  ✔ 17. Driver access to another driver rides is isolated (30ms)
+  ✔ 18. Non-admin users are rejected from admin endpoints (25ms)
+  ✔ 19. Request validation returns structured errors array (206ms)
+  ✔ 20. Existing features continue to work: token blacklisting & root endpoint (159ms)
+  ✔ 21. Full ride booking lifecycle: estimation -> booking -> arrival -> OTP start -> completion -> rating (54ms)
+  ✔ 22. Single ride lookup via getRideById populates driver and passenger (37ms)
+  ✔ 23. Captain profile update persists vehicle and name modifications (6ms)
+  ✔ 24. Support complaint creation and admin resolution (4ms)
+  ✔ 25. OTP generation, bcrypt hashing, and cooldown rate limiting (75ms)
+  ✔ 26. OTP verification attempt limits and single-use replay prevention (183ms)
+  ✔ 27. User and Captain controller OTP authentication flow (330ms)
+✔ All 27 tests passed (1267ms)
 ```
 
 ---

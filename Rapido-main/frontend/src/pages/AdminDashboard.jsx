@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { adminAPI } from '../services/api';
+import { adminAPI, subscriptionAPI } from '../services/api';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
+import Modal from '../components/common/Modal';
 import {
   Shield,
   Users,
@@ -13,7 +14,9 @@ import {
   XCircle,
   FileText,
   TrendingUp,
-  AlertCircle
+  AlertCircle,
+  Sparkles,
+  Plus
 } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -23,18 +26,30 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [rides, setRides] = useState([]);
   const [complaints, setComplaints] = useState([]);
+  const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
 
+  // Plan creation modal state
+  const [planModalOpen, setPlanModalOpen] = useState(false);
+  const [planName, setPlanName] = useState('');
+  const [planTagline, setPlanTagline] = useState('');
+  const [planPrice, setPlanPrice] = useState(299);
+  const [planValidity, setPlanValidity] = useState(30);
+  const [planAllowance, setPlanAllowance] = useState(10);
+  const [planMaxFare, setPlanMaxFare] = useState(180);
+  const [planBadge, setPlanBadge] = useState('Standard');
+
   const loadData = async () => {
     try {
-      const [overviewRes, driversRes, usersRes, ridesRes, complaintsRes] = await Promise.all([
+      const [overviewRes, driversRes, usersRes, ridesRes, complaintsRes, plansRes] = await Promise.all([
         adminAPI.getOverview().catch(() => ({ data: { metrics: null } })),
         adminAPI.getCaptains().catch(() => ({ data: { captains: [] } })),
         adminAPI.getUsers().catch(() => ({ data: { users: [] } })),
         adminAPI.getRides().catch(() => ({ data: { rides: [] } })),
-        adminAPI.getComplaints().catch(() => ({ data: { complaints: [] } }))
+        adminAPI.getComplaints().catch(() => ({ data: { complaints: [] } })),
+        subscriptionAPI.getPlans().catch(() => ({ data: { plans: [] } }))
       ]);
 
       setMetrics(overviewRes.data?.metrics);
@@ -42,6 +57,7 @@ export default function AdminDashboard() {
       setUsers(usersRes.data?.users || []);
       setRides(ridesRes.data?.rides || []);
       setComplaints(complaintsRes.data?.complaints || []);
+      setPlans(plansRes.data?.plans || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -89,6 +105,47 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleCreatePlan = async (e) => {
+    e.preventDefault();
+    if (!planName.trim()) return;
+    setActionLoading(true);
+    try {
+      await adminAPI.createPlan({
+        name: planName.trim(),
+        slug: planName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        tagline: planTagline.trim() || 'Custom mobility commuter plan',
+        description: `Plan includes ${planAllowance} rides up to ₹${planMaxFare} each, valid for ${planValidity} days.`,
+        price: Number(planPrice),
+        currency: 'INR',
+        validityDays: Number(planValidity),
+        rideAllowance: Number(planAllowance),
+        maxFarePerRide: Number(planMaxFare),
+        allowedVehicleTypes: ['car', 'motorcycle', 'auto'],
+        excessFarePolicy: 'pay_difference',
+        features: [
+          `${planAllowance} Rides included (up to ₹${planMaxFare} each)`,
+          `Valid for ${planValidity} days across all vehicle types`,
+          'Zero surge pricing',
+          'Priority driver dispatch'
+        ],
+        badge: planBadge.trim() || 'Custom',
+        isPopular: false,
+        isActive: true
+      });
+      setStatusMessage('New subscription plan published successfully');
+      setTimeout(() => setStatusMessage(''), 3000);
+      setPlanModalOpen(false);
+      setPlanName('');
+      setPlanTagline('');
+      loadData();
+    } catch (err) {
+      console.error(err);
+      setStatusMessage(err.response?.data?.message || 'Failed to create plan');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Title */}
@@ -118,6 +175,7 @@ export default function AdminDashboard() {
           { id: 'drivers', name: `Drivers (${drivers.length})` },
           { id: 'users', name: `Users (${users.length})` },
           { id: 'rides', name: `Rides (${rides.length})` },
+          { id: 'plans', name: `Plans (${plans.length})` },
           { id: 'complaints', name: `Complaints (${complaints.length})` }
         ].map((tab) => (
           <button
@@ -313,6 +371,176 @@ export default function AdminDashboard() {
           </div>
         </Card>
       )}
+
+      {/* Subscription Plans Management Tab */}
+      {activeTab === 'plans' && (
+        <Card>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200 gap-4 mb-4">
+            <div>
+              <h3 className="text-lg font-bold text-slate-900">RidePass Subscription Plans</h3>
+              <p className="text-xs text-slate-500">Configure commuter packs, ride caps, and validity terms</p>
+            </div>
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={() => setPlanModalOpen(true)}
+              className="flex items-center gap-1.5"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Create New Plan</span>
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {plans.map((p) => (
+              <div
+                key={p._id}
+                className="p-5 rounded-2xl border border-slate-200 bg-white hover:border-slate-300 transition-all flex flex-col justify-between space-y-4"
+              >
+                <div className="space-y-2">
+                  <div className="flex justify-between items-start">
+                    <span className="font-bold text-slate-900 text-base">{p.name}</span>
+                    <Badge variant={p.isActive ? 'green' : 'default'} size="sm">
+                      {p.isActive ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-slate-500">{p.tagline || p.description}</p>
+                  <div className="text-2xl font-black text-slate-900 pt-1">
+                    ₹{p.price} <span className="text-xs font-normal text-slate-500">/ {p.validityDays} days</span>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1.5 text-xs text-slate-700">
+                  <div className="flex justify-between">
+                    <span>Ride Allowance:</span>
+                    <span className="font-bold text-emerald-700">{p.rideAllowance} rides</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Fare Cap per Ride:</span>
+                    <span className="font-bold text-slate-900">₹{p.maxFarePerRide}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Badge Tag:</span>
+                    <span className="font-bold text-blue-600">{p.badge || 'Standard'}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Create Plan Modal */}
+      <Modal
+        isOpen={planModalOpen}
+        onClose={() => setPlanModalOpen(false)}
+        title="Publish New RidePass Plan"
+      >
+        <form onSubmit={handleCreatePlan} className="space-y-4 text-xs">
+          <div className="space-y-1">
+            <label className="font-semibold text-slate-700">Plan Name</label>
+            <input
+              type="text"
+              required
+              value={planName}
+              onChange={(e) => setPlanName(e.target.value)}
+              placeholder="e.g. RidePass Metro Elite"
+              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-purple-500"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="font-semibold text-slate-700">Tagline / Subtitle</label>
+            <input
+              type="text"
+              value={planTagline}
+              onChange={(e) => setPlanTagline(e.target.value)}
+              placeholder="e.g. Premium pass for frequent airport commuters"
+              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-purple-500"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="font-semibold text-slate-700">Price (₹)</label>
+              <input
+                type="number"
+                min="1"
+                required
+                value={planPrice}
+                onChange={(e) => setPlanPrice(e.target.value)}
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-purple-500"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="font-semibold text-slate-700">Validity (Days)</label>
+              <input
+                type="number"
+                min="1"
+                required
+                value={planValidity}
+                onChange={(e) => setPlanValidity(e.target.value)}
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-purple-500"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="font-semibold text-slate-700">Ride Allowance</label>
+              <input
+                type="number"
+                min="1"
+                required
+                value={planAllowance}
+                onChange={(e) => setPlanAllowance(e.target.value)}
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-purple-500"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="font-semibold text-slate-700">Max Fare Cap / Ride (₹)</label>
+              <input
+                type="number"
+                min="1"
+                required
+                value={planMaxFare}
+                onChange={(e) => setPlanMaxFare(e.target.value)}
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-purple-500"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="font-semibold text-slate-700">Badge Label</label>
+            <input
+              type="text"
+              value={planBadge}
+              onChange={(e) => setPlanBadge(e.target.value)}
+              placeholder="e.g. Popular, Best Value, Executive"
+              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-purple-500"
+            />
+          </div>
+
+          <div className="pt-2 flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setPlanModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              loading={actionLoading}
+            >
+              Publish Plan
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       {/* Complaints Tab */}
       {activeTab === 'complaints' && (
